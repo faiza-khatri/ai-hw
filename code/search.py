@@ -104,8 +104,12 @@ def aStarSearch(problem):
     visited = {}
     nodesExpanded = 0
 
+    print("Beginning A* search:\n")
+
     while not queue.isEmpty():
         state, path, gn = queue.pop()
+        print("Node Expanded: ", state)
+
 
         if state in visited and visited[state] <= gn:
             continue
@@ -114,6 +118,12 @@ def aStarSearch(problem):
         nodesExpanded += 1
 
         if problem.isGoalState(state):
+            print("Goal state reached. Path observed:")
+            for action in path:
+                print(action)
+
+            print("Number of nodes expanded", nodesExpanded)
+            print("Total cost: ", gn)
             return path, gn, nodesExpanded
 
         for successor, action, stepCost in state.getSuccessors():
@@ -126,11 +136,9 @@ def aStarSearch(problem):
 
                 queue.update((successor, path, gnSucessor), fnSuccessor)
 
+
     return None, float('inf'), nodesExpanded
 
-
-        
-    util.raiseNotDefined()
 
 
 def dijkstraSearch(problem):
