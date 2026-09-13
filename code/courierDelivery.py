@@ -32,7 +32,7 @@ class courierDeliveryProblem():
             track = self.tracktypes[state][neighbor]
             cost = track * self.penalty[track]
             action = f"{state} -> {neighbor}"
-            successors.append((neighbor, cost, action)
+            successors.append((neighbor, action, cost))
         return successors
 
     def getCostOfActions(self, actions):

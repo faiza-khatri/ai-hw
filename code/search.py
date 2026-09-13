@@ -89,6 +89,47 @@ def aStarSearch(problem):
     the assignment asks you to report these for the comparative analysis.
     """
     "*** YOUR A* CODE HERE ***"
+    queue = util.PriorityQueue()
+
+    state = problem.getStartState()
+    
+    gn = 0
+    hn = problem.getHeuristic(state)
+    fn = gn + hn
+
+    currentState = (state, [], gn) # current node, actions, cost 
+
+    queue.push(currentState, fn)
+
+    visited = {}
+    nodesExpanded = 0
+
+    while not queue.isEmpty():
+        state, path, gn = queue.pop()
+
+        if state in visited and visited[state] <= gn:
+            continue
+
+        visited[state] = gn
+        nodesExpanded += 1
+
+        if problem.isGoalState(state):
+            return path, gn, nodesExpanded
+
+        for successor, action, stepCost in state.getSuccessors():
+            gnSucessor = gn + stepCost
+            if successor not in visited or newCost < visited[successor]:
+                hnSuccessor = problem.getHeuristic(successor)
+                fnSuccessor = gnSucessor + hnSuccessor
+
+                newPath = path + [action]
+
+                queue.update((successor, path, gnSucessor), fnSuccessor)
+
+    return None, float('inf'), nodesExpanded
+
+
+        
     util.raiseNotDefined()
 
 
