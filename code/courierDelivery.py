@@ -59,7 +59,7 @@ class courierDeliveryProblem(SearchProblem):
         """Connections.csv -> dict[area][area] -> float km, or None for -1 (no direct connection)."""
         def parseCell(cell):
             value = float(cell)
-            return None if value == -1 else value
+            return None if (value == -1 or value == 0) else value
         return _loadMatrix(path, parseCell)
  
     @staticmethod
@@ -69,14 +69,15 @@ class courierDeliveryProblem(SearchProblem):
  
     @staticmethod
     def _loadTrackTypes(path):
-        """TrackType.csv -> dict[area][area] -> 'M' / 'S' / 'N', or None for -1 (no connection)."""
+        """TrackType.csv -> dict[area][area] -> 'M' / 'S' / 'N', or None for -1 (no connection) or 0 (self)."""
         def parseCell(cell):
-            if cell == "-1":
+            if cell in ("-1", "0"):
                 return None
             if cell not in ("M", "S", "N"):
-                raise ValueError(f"Unexpected track type '{cell}' (expected M, S, N, or -1)")
+                raise ValueError(f"Unexpected track type '{cell}' (expected M, S, N, -1, or 0)")
             return cell
         return _loadMatrix(path, parseCell)
+ 
 
     def getStartState(self):
         return self.start

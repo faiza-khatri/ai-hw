@@ -5,6 +5,7 @@ import io
 from contextlib import redirect_stdout
 from itertools import groupby
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 from courierDelivery import courierDeliveryProblem
 from robotNavigation import RobotNavigationProblem
@@ -60,32 +61,6 @@ def buildRobotCases():
     ]
 
 
-def loadMatrix(filename, convertValue):
-    with (CSV_DIRECTORY / filename).open(
-        newline="", encoding="utf-8-sig"
-    ) as csvFile:
-        rows = list(csv.reader(csvFile))
-
-    columnNames = rows[0][1:]
-    matrix = {
-        row[0]: {
-            column: convertValue(value)
-            for column, value in zip(columnNames, row[1:])
-        }
-        for row in rows[1:]
-    }
-    return matrix
-
-
-def loadCourierData():
-    connections = loadMatrix("Connections.csv", float)
-    heuristics = loadMatrix("heuristics.csv", float)
-    trackTypes = loadMatrix(
-        "TrackType.csv", lambda value: None if value == "-1" else value
-    )
-    return connections, heuristics, trackTypes
-
-
 def compareRobotNavigation():
     results = []
     algorithms = [("A*", aStarSearch), ("Dijkstra", dijkstraSearch)]
@@ -102,7 +77,6 @@ def compareRobotNavigation():
 
 
 def compareCourierDelivery():
-    connections, heuristics, trackTypes = loadCourierData()
     cases = [
         ("Saddar to Korangi", "Saddar (Hub)", "Korangi"),
         ("Lyari to Johar", "Lyari", "Gulistan-e-Johar"),
@@ -115,7 +89,7 @@ def compareCourierDelivery():
     for caseName, start, goal in cases:
         for algorithmName, searchFunction in algorithms:
             problem = courierDeliveryProblem(
-                connections, heuristics, trackTypes, start, goal
+                "csv/Connections.csv", "csv/heuristics.csv", "csv/TrackType.csv", start, goal
             )
             path, cost, expanded = runQuietly(searchFunction, problem)
             results.append(
@@ -140,7 +114,69 @@ def printMarkdownTable(title, results):
         print(f"| {caseName} | {algorithm} | {cost} | {expanded} | {route} |")
     print()
 
-
+def _groupByCase(results):
+    """
+    Turns the flat (case, algorithm, cost, expanded, route) results list into
+    caseNames (in first-seen order) plus, per algorithm, a list of
+    nodes-expanded counts aligned to those caseNames -- ready to hand
+    straight to a grouped bar chart.
+    """
+    caseNames = []
+    expandedByAlgorithm = {}
+ 
+    for caseName, algorithm, _cost, expanded, _route in results:
+        if caseName not in caseNames:
+            caseNames.append(caseName)
+        expandedByAlgorithm.setdefault(algorithm, {})[caseName] = expanded
+ 
+    algorithms = list(expandedByAlgorithm.keys())
+    series = {
+        algorithm: [expandedByAlgorithm[algorithm][case] for case in caseNames]
+        for algorithm in algorithms
+    }
+    return caseNames, series
+ 
+ 
+def plotNodesExpanded(results, title, outputPath):
+    """Grouped bar chart: nodes expanded per configuration, one bar per algorithm."""
+    caseNames, series = _groupByCase(results)
+    algorithms = list(series.keys())
+ 
+    x = range(len(caseNames))
+    barWidth = 0.8 / len(algorithms)
+ 
+    fig, ax = plt.subplots(figsize=(max(7, len(caseNames) * 2.2), 5))
+    for i, algorithm in enumerate(algorithms):
+        offset = (i - (len(algorithms) - 1) / 2) * barWidth
+        positions = [xi + offset for xi in x]
+        ax.bar(positions, series[algorithm], barWidth, label=algorithm)
+ 
+    ax.set_ylabel("Nodes expanded")
+    ax.set_title(title)
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(caseNames, rotation=15, ha="right", fontsize=9)
+    ax.legend()
+ 
+    fig.tight_layout()
+    fig.savefig(outputPath, dpi=150)
+    plt.close(fig)
+    return outputPath
+ 
+ 
 if __name__ == "__main__":
-    printMarkdownTable("Robot Navigation", compareRobotNavigation())
-    printMarkdownTable("Courier Delivery", compareCourierDelivery())
+    robotResults = compareRobotNavigation()
+    courierResults = compareCourierDelivery()
+ 
+    printMarkdownTable("Robot Navigation", robotResults)
+    printMarkdownTable("Courier Delivery", courierResults)
+ 
+    robotChart = plotNodesExpanded(
+        robotResults, "Robot Navigation: nodes expanded (A* vs Dijkstra)", "robot_nodes_expanded.png"
+    )
+    courierChart = plotNodesExpanded(
+        courierResults, "Courier Delivery: nodes expanded (A* vs Dijkstra)", "courier_nodes_expanded.png"
+    )
+ 
+    print(f"Saved {robotChart}")
+    print(f"Saved {courierChart}")
+ 
