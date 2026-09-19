@@ -6,6 +6,7 @@ from contextlib import redirect_stdout
 from itertools import groupby
 from pathlib import Path
 import matplotlib.pyplot as plt
+import os
 
 from courierDelivery import courierDeliveryProblem
 from robotNavigation import RobotNavigationProblem
@@ -164,6 +165,8 @@ def plotNodesExpanded(results, title, outputPath):
  
  
 if __name__ == "__main__":
+    os.makedirs("comparisonOutput", exist_ok=True)
+
     robotResults = compareRobotNavigation()
     courierResults = compareCourierDelivery()
  
@@ -171,10 +174,10 @@ if __name__ == "__main__":
     printMarkdownTable("Courier Delivery", courierResults)
  
     robotChart = plotNodesExpanded(
-        robotResults, "Robot Navigation: nodes expanded (A* vs Dijkstra)", "robot_nodes_expanded.png"
+        robotResults, "Robot Navigation: nodes expanded (A* vs Dijkstra)", "comparisonOutput/robot_nodes_expanded.png"
     )
     courierChart = plotNodesExpanded(
-        courierResults, "Courier Delivery: nodes expanded (A* vs Dijkstra)", "courier_nodes_expanded.png"
+        courierResults, "Courier Delivery: nodes expanded (A* vs Dijkstra)", "comparisonOutput/courier_nodes_expanded.png"
     )
  
     print(f"Saved {robotChart}")
