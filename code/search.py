@@ -88,34 +88,28 @@ def aStarSearch(problem):
     tracking/returning the total cost and number of nodes expanded, since
     the assignment asks you to report these for the comparative analysis.
     """
-    "*** YOUR A* CODE HERE ***"
     queue = util.PriorityQueue()
+    start = problem.getStartState()
+    startCost = 0
 
-    state = problem.getStartState()
-    
-    gn = 0
-    hn = problem.getHeuristic(state)
-    fn = gn + hn
+    # Each queue item stores: (current state, actions taken, path cost).
+    queue.push((start, [], startCost), problem.getHeuristic(start))
 
-    currentState = (state, [], gn) # current node, actions, cost 
-
-    queue.push(currentState, fn)
-
-    visited = {}
+    bestCost = {start: startCost}
     nodesExpanded = 0
 
     print("Beginning A* search:\n")
 
     while not queue.isEmpty():
-        state, path, gn = queue.pop()
-        print("Node Expanded: ", state)
+        state, path, pathCost = queue.pop()
 
-
-        if state in visited and visited[state] <= gn:
+        # Ignore an older queue entry if a cheaper path to this state was
+        # discovered after the entry was added.
+        if pathCost > bestCost.get(state, float('inf')):
             continue
 
-        visited[state] = gn
         nodesExpanded += 1
+        print("Node Expanded: ", state)
 
         if problem.isGoalState(state):
             print("Goal state reached. Path observed:")
@@ -123,19 +117,22 @@ def aStarSearch(problem):
                 print(action)
 
             print("Number of nodes expanded", nodesExpanded)
-            print("Total cost: ", gn)
-            return path, gn, nodesExpanded
+            print("Total cost: ", pathCost)
+            return path, pathCost, nodesExpanded
 
-        for successor, action, stepCost in state.getSuccessors():
-            gnSucessor = gn + stepCost
-            if successor not in visited or newCost < visited[successor]:
-                hnSuccessor = problem.getHeuristic(successor)
-                fnSuccessor = gnSucessor + hnSuccessor
+        # Ask the problem for successors because a state may be a coordinate
+        # tuple or a location string; the state itself does not own this method.
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if stepCost < 0:
+                raise ValueError("A* Search requires non-negative costs")
 
+            newCost = pathCost + stepCost
+
+            if newCost < bestCost.get(successor, float('inf')):
+                bestCost[successor] = newCost
                 newPath = path + [action]
-
-                queue.update((successor, path, gnSucessor), fnSuccessor)
-
+                priority = newCost + problem.getHeuristic(successor)
+                queue.push((successor, newPath, newCost), priority)
 
     return None, float('inf'), nodesExpanded
 
