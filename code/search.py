@@ -90,51 +90,61 @@ def aStarSearch(problem):
     """
     queue = util.PriorityQueue()
     start = problem.getStartState()
-    startCost = 0
+    gValues = {start: 0}        # state -> cheapest gn found so far
+    parent = {}                 # state -> (previous state, action taken)
+    visited = set()             # states whose optimal gn is finalized
 
-    # Each queue item stores: (current state, actions taken, path cost).
-    queue.push((start, [], startCost), problem.getHeuristic(start))
 
-    bestCost = {start: startCost}
+    startHn = problem.getHeuristic(start)
+    startFn = 0 + startHn
+    queue.push(start, startFn)
+
     nodesExpanded = 0
 
     print("Beginning A* search:\n")
 
     while not queue.isEmpty():
-        state, path, pathCost = queue.pop()
+        state = queue.pop() # get cheapest fn state
 
-        # Ignore an older queue entry if a cheaper path to this state was
-        # discovered after the entry was added.
-        if pathCost > bestCost.get(state, float('inf')):
-            continue
+        if state in visited:
+            continue # if optimal path to state alr present, skip
 
+        visited.add(state)
         nodesExpanded += 1
         print("Node Expanded: ", state)
 
+        gn = gValues[state]
+ 
         if problem.isGoalState(state):
-            print("Goal state reached. Path observed:")
-            for action in path:
-                print(action)
+            return _reconstructPath(parent, state), gn, nodesExpanded
 
-            print("Number of nodes expanded", nodesExpanded)
-            print("Total cost: ", pathCost)
-            return path, pathCost, nodesExpanded
-
-        # Ask the problem for successors because a state may be a coordinate
-        # tuple or a location string; the state itself does not own this method.
         for successor, action, stepCost in problem.getSuccessors(state):
             if stepCost < 0:
                 raise ValueError("A* Search requires non-negative costs")
 
-            newCost = pathCost + stepCost
+            gnSuccessor = gn + stepCost
 
-            if newCost < bestCost.get(successor, float('inf')):
-                bestCost[successor] = newCost
-                newPath = path + [action]
-                priority = newCost + problem.getHeuristic(successor)
-                queue.push((successor, newPath, newCost), priority)
+            if successor not in gValues or gnSuccessor < gValues[successor]:
+                gValues[successor] = gnSuccessor
+                parent[successor] = (state, action)
+
+                hnSuccessor = problem.getHeuristic(successor)
+                fnSuccessor = hnSuccessor + gnSuccessor
+
+                queue.update(successor, fnSuccessor)
 
     return None, float('inf'), nodesExpanded
+
+def _reconstructPath(parent, goal):
+    path = []
+    state = goal
+    while state in parent:
+        previousState, action = parent[state]
+        path.append(action)
+        state = previousState
+    path.reverse()
+    return path
+
 
 
 
