@@ -150,8 +150,42 @@ def dijkstraSearch(problem):
     Like aStarSearch, this must work generically on any SearchProblem.
     You may reuse/adapt your CS 102 - DSA implementation here.
     """
-    "*** YOUR DIJKSTRA CODE HERE ***"
-    util.raiseNotDefined()
+    frontier = util.PriorityQueue()
+    start = problem.getStartState()
+
+    # Each queue item stores: (current state, actions taken, path cost).
+    frontier.push((start, [], 0), 0)
+
+    # Cheapest path discovered to each state. This also prevents cycles
+    # from making us repeatedly explore the same states.
+    bestCost = {start: 0}
+    nodesExpanded = 0
+
+    while not frontier.isEmpty():
+        state, path, pathCost = frontier.pop()
+
+        # A cheaper route may have been added after this entry. In that
+        # case, this older queue entry should be ignored.
+        if pathCost > bestCost.get(state, float('inf')):
+            continue
+
+        nodesExpanded += 1
+
+        if problem.isGoalState(state):
+            return path, pathCost, nodesExpanded
+
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if stepCost < 0:
+                raise ValueError("Dijkstra Search requires non-negative costs")
+
+            newCost = pathCost + stepCost
+
+            if newCost < bestCost.get(successor, float('inf')):
+                bestCost[successor] = newCost
+                newPath = path + [action]
+                frontier.push((successor, newPath, newCost), newCost)
+
+    return None, float('inf'), nodesExpanded
 
 
 def searchWithStopovers(problem, stopovers):

@@ -1,4 +1,7 @@
-class courierDeliveryProblem():
+from search import SearchProblem
+
+
+class courierDeliveryProblem(SearchProblem):
     def __init__(self, connections, heuristics, tracktypes, start, goal):
         """
             start : string 
@@ -13,7 +16,7 @@ class courierDeliveryProblem():
         self.start = start
         self.goal = goal
         self.currentState = start
-        self.penalty = {'M' : 1.0, 'S': 2.0, 'N', 3.0}
+        self.penalty = {'M': 1.0, 'S': 2.0, 'N': 3.0}
 
     def getStartState(self):
         return self.start
@@ -27,10 +30,10 @@ class courierDeliveryProblem():
     def getSuccessors(self, state):
         successors = []
         for neighbor, dist in self.connections[state].items():
-            if not dist:
+            if dist is None or dist <= 0:
                 continue
             track = self.tracktypes[state][neighbor]
-            cost = track * self.penalty[track]
+            cost = dist * self.penalty[track]
             action = f"{state} -> {neighbor}"
             successors.append((neighbor, action, cost))
         return successors
