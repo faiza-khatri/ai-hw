@@ -51,9 +51,8 @@ def main():
 
     completeRoute = locationsFromActions(arguments.hub, actions)
 
-    print("Specified Hub: ", arguments.hub or "None")
-
-    print("Requested stopovers:", " , ".join(arguments.stopovers) or "None")
+    print("Specified Hub:", arguments.hub or "None")
+    print("Requested stopovers:", ", ".join(arguments.stopovers) or "None")
     print("Optimized stopover order:", " -> ".join(stopoverOrder) or "None")
     print("Complete route:", " -> ".join(completeRoute))
     print("Total route cost:", totalCost)
