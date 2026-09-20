@@ -62,6 +62,7 @@ def simulatedAnnealing(
     if iterationsPerTemperature <= 0:
         raise ValueError("iterationsPerTemperature must be positive")
 
+    #for greikwalk so an invallid x,y is never generated and sent to the function as anealing occurs
     (minimumX, maximumX), (minimumY, maximumY) = bounds
     if not inclusiveBounds:
             minimumX = math.nextafter(minimumX, math.inf)
@@ -180,7 +181,10 @@ def findBestRun(function, bounds, inclusiveBounds, restarts, firstSeed, **anneal
         )
         for restart in range(restarts)
     ]
-    return min(results, key=lambda result: result.bestValue)
+
+    objective = annealingParameters.get("objective", "min")
+    selectBest = min if objective == "min" else max
+    return selectBest(results, key=lambda result: result.bestValue)
 
 
 def plotResult(functionName, result, outputDirectory, showPlot=False):
