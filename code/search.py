@@ -216,6 +216,48 @@ def dijkstraSearch(problem, onExpand=None):
     return None, float('inf'), nodesExpanded
 
 
+#note for faiza: 
+# 
+# Fixed multi-stop A* routing and complete Question 1(d)
+# The stopover implementation attempted to run A* between arbitrary pairs of
+# locations, but the search-problem heuristics only supported the single goal
+# stored in each problem object. aStarSearch called getHeuristic(state,
+# temporaryGoal), causing a TypeError before any stopover route could be
+# calculated. Using the original fixed goal instead would also have produced an
+# incorrect heuristic for intermediate route segments.
+
+# Update the SearchProblem interface and both problem implementations so
+# getHeuristic accepts an optional temporary goal. Normal A* searches continue
+# to use the problem's original goal, while stopover searches use the correct
+# destination for each individual route segment.
+
+# Complete and harden searchWithStopovers by:
+
+# - removing duplicate stopovers and redundant hub entries
+# - returning a valid zero-cost result when no stopovers are supplied
+# - calculating pairwise A* routes between the hub and every stopover
+# - testing every stopover permutation, including the return to the hub
+# - skipping orders containing unreachable route segments
+# - selecting the lowest-cost reachable ordering
+# - stitching the selected A* segments into one complete delivery route
+# - returning the route, total cost, expanded-node count, and stopover order
+
+# Add stopoverDelivery.py as a runnable example that prints the requested
+# stopovers, optimized order, complete route, total cost, and pairwise A*
+# expansion count.
+
+# Document Question 1(d) with formal pseudocode, complexity discussion, a
+# reproducible command, and verified Karachi delivery output.
+
+# Validation:
+
+# - verified the example route cost against its stitched actions
+# - independently confirmed the optimal cost using Dijkstra permutations
+# - tested robot stopovers and temporary Manhattan-distance goals
+# - tested duplicate, redundant-hub, empty, and unreachable-order handling
+# - confirmed existing A* and Dijkstra comparison results remain unchanged
+# - confirmed all Python files parse successfully
+
 def searchWithStopovers(problem, stopovers):
     """
     Part (d): Route with Stopovers.
@@ -233,31 +275,47 @@ def searchWithStopovers(problem, stopovers):
     which stopovers were visited (see assignment spec for exact output
     requirements).
     """
-    "*** YOUR STOPOVER-ROUTING CODE HERE ***"
-
     hub = problem.getStartState()
-    points = [hub] + list(stopovers)
+
+    # Visiting the hub again is redundant, and multiple packages for the same
+    # area can be delivered during one visit. Preserve the user's input order.
+    uniqueStopovers = list(
+        dict.fromkeys(stopover for stopover in stopovers if stopover != hub)
+    )
+    if not uniqueStopovers:
+        return [], 0, 0, []
+
+    points = [hub] + uniqueStopovers
 
     # pairwise A* between every ordered pair of points
     pairResults = {}
     totalNodesExpanded = 0
 
-    for a, b in itertools.permutations(points, 2):
-        # here, we assume that we have means to get heuristics btw an arbitary start and goal 
-        # instead of just problems
-        path, cost, nodes = aStarSearch(problem, startState=a, goalState=b)
-        pairResults[(a, b)] = (path, cost)  # path/cost may be None/inf
+    for start, goal in itertools.permutations(points, 2):
+        # The temporary goal lets A* use the correct heuristic for this leg.
+        path, cost, nodes = aStarSearch(
+            problem,
+            startState=start,
+            goalState=goal,
+        )
+        pairResults[(start, goal)] = (path, cost)
         totalNodesExpanded += nodes
 
     # brute-force best order of stopovers (hub -> ... -> hub)
-    # implicitly skips any order that relies on an unreachable path btw stopovers
-
     bestOrder, bestCost = None, float('inf')
 
-    for perm in itertools.permutations(stopovers):
-        order = [hub] + list(perm) + [hub]
-        cost = sum(pairResults[(order[i], order[i + 1])][1]
-                   for i in range(len(order) - 1))
+    for permutation in itertools.permutations(uniqueStopovers):
+        order = [hub] + list(permutation) + [hub]
+        routeLegs = [
+            pairResults[(order[index], order[index + 1])]
+            for index in range(len(order) - 1)
+        ]
+
+        # Skip an ordering if any required pair of locations is unreachable.
+        if any(path is None for path, _cost in routeLegs):
+            continue
+
+        cost = sum(cost for _path, cost in routeLegs)
         if cost < bestCost:
             bestCost, bestOrder = cost, order
 
@@ -266,7 +324,8 @@ def searchWithStopovers(problem, stopovers):
 
     # stitch full path from the winning order.
     totalPath = []
-    for i in range(len(bestOrder) - 1):
-        totalPath += pairResults[(bestOrder[i], bestOrder[i + 1])][0]
+    for index in range(len(bestOrder) - 1):
+        legPath, _legCost = pairResults[(bestOrder[index], bestOrder[index + 1])]
+        totalPath.extend(legPath)
 
     return totalPath, bestCost, totalNodesExpanded, bestOrder[1:-1]

@@ -1,4 +1,4 @@
-# Question 1(c): Comparative Analysis
+# Question 1: Search Analysis
 
 ## Method
 
@@ -69,6 +69,79 @@ uninformed and expands locations according only to accumulated route cost.
 The results show that both algorithms preserve optimal solution cost, while A*
 usually reduces the search effort when the heuristic reflects the road network
 well.
+
+## Route with Stopovers (Question 1(d))
+
+For a multi-package run, the hub and unique stopovers are treated as important
+route points. A* first calculates the shortest path between every ordered pair
+of these points. The algorithm then tests every possible stopover order, adds
+the stored segment costs including the return to the hub, and retains the
+lowest-cost reachable order. Finally, it joins the corresponding A* segments
+to produce one complete route.
+
+The courier and robot heuristics accept an optional temporary goal. Normal A*
+still uses the problem's original goal, while each stopover segment estimates
+distance to its own destination.
+
+### Pseudocode
+
+```text
+SEARCH-WITH-STOPOVERS(problem, stopovers):
+    hub = problem's start state
+    remove duplicate stopovers and remove the hub from the stopover list
+
+    IF there are no stopovers:
+        RETURN empty path, zero cost, empty order
+
+    points = [hub] + stopovers
+
+    FOR every ordered pair (start, goal) in points:
+        path, cost = A-STAR(problem, temporary start, temporary goal)
+        store path and cost for (start, goal)
+
+    bestCost = infinity
+    bestOrder = none
+
+    FOR every permutation of stopovers:
+        order = [hub] + permutation + [hub]
+
+        IF every consecutive pair in order is reachable:
+            cost = sum of stored costs between consecutive locations
+
+            IF cost < bestCost:
+                bestCost = cost
+                bestOrder = order
+
+    IF no complete order is reachable:
+        report that no valid delivery run exists
+
+    completePath = join the stored A* paths along bestOrder
+    RETURN completePath, bestCost, and the visited stopover order
+```
+
+Testing all permutations gives the exact best order for a small delivery run.
+For `m` unique stopovers, it performs `m!` order comparisons after the pairwise
+A* searches, so a different ordering method would be preferable for a large
+number of packages.
+
+### Example Result
+
+The included example starts and ends at Saddar and intentionally supplies the
+stopovers in a non-optimal order:
+
+```text
+Requested stopovers: Korangi -> Gulistan-e-Johar -> Clifton
+Optimized stopover order: Gulistan-e-Johar -> Korangi -> Clifton
+Complete route: Saddar (Hub) -> PECHS -> Gulshan-e-Iqbal -> Gulistan-e-Johar -> Korangi -> DHA -> Clifton -> Saddar (Hub)
+Total route cost: 75.0
+Nodes expanded during pairwise A* searches: 69
+```
+
+This example can be reproduced from the `ai-hw` directory with:
+
+```powershell
+python .\code\stopoverDelivery.py
+```
 
 ## Robot Navigation Simulations
 

@@ -50,8 +50,9 @@ class RobotNavigationProblem(SearchProblem):
 
         return len(actions)
 
-    def getHeuristic(self, state):
-        return manhattanDistance(state, self.goal)
+    def getHeuristic(self, state, goalState=None):
+        target = self.goal if goalState is None else goalState
+        return manhattanDistance(state, target)
 
 
 #rough tesing 

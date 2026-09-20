@@ -116,5 +116,6 @@ class courierDeliveryProblem(SearchProblem):
 
         return total
 
-    def getHeuristic(self, state):
-        return self.heuristics[state][self.goal]
+    def getHeuristic(self, state, goalState=None):
+        target = self.goal if goalState is None else goalState
+        return self.heuristics[state][target]
