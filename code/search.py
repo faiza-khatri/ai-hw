@@ -258,6 +258,8 @@ def dijkstraSearch(problem, onExpand=None):
 # - confirmed existing A* and Dijkstra comparison results remain unchanged
 # - confirmed all Python files parse successfully
 
+# psudeocode:
+
 def searchWithStopovers(problem, stopovers):
     """
     Part (d): Route with Stopovers.
@@ -275,6 +277,36 @@ def searchWithStopovers(problem, stopovers):
     which stopovers were visited (see assignment spec for exact output
     requirements).
     """
+
+    """
+    PSUEDOCODE:
+    
+    hub ← problem's start state
+    points ← hub + all stopovers
+
+    // find cost between every pair of points
+    FOR EACH pair (a, b) in points:
+        run A* from a to b
+        store its path and cost
+
+    // try every order of visiting the stopovers
+    bestOrder ← none
+    bestCost ← infinity
+
+    FOR EACH possible ordering of stopovers:
+        route ← hub → ordering → hub
+        cost ← sum of stored costs for each step in route
+
+        IF cost < bestCost:
+            bestCost ← cost
+            bestOrder ← route
+
+    // build the final path from the best ordering
+    totalPath ← join together the stored paths for each step in bestOrder
+
+    RETURN totalPath, bestCost, order of stopovers visited
+    """
+
     hub = problem.getStartState()
 
     points = [hub] + list(stopovers)
