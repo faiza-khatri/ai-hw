@@ -221,10 +221,32 @@ def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=
             firstSeed + index * restarts,
             **parameters,
         )
-        results.append((name, result))
+        results.append((name, result, "Min"))
 
         if outputDirectory is not None:
-            plotResult(name, result, outputDirectory, show)
+            plotResult(name+"_min", result, outputDirectory, show)
+
+    for index, (name, function, bounds, tunedParameters) in enumerate(functions):
+            parameters = {
+                "objective": "max",
+                "neighborhoodSize": 0.5,
+                "startingTemperature": 1.0,
+                "temperatureDecrease": 0.1,
+                "iterationsPerTemperature": 100,
+            }
+            parameters.update(tunedParameters)
+    
+            result = findBestRun(
+                function,
+                bounds,
+                restarts,
+                firstSeed + index * restarts,
+                **parameters,
+            )
+            results.append((name, result, "Max"))
+    
+            if outputDirectory is not None:
+                plotResult(name+"_max", result, outputDirectory, show)
 
     return results
 
@@ -248,11 +270,12 @@ def main():
         arguments.show,
     )
 
-    print("Function       Best x       Best y       Best f(x, y)   Accepted")
+    print("Function     Max/Min      Best x       Best y        Best f(x, y)   Accepted")
     print("-----------------------------------------------------------------")
-    for name, result in results:
+    for name, result, obj in results:
         print(
             f"{name:<12} "
+            f"{obj:<10}"
             f"{result.bestX:>11.6f} "
             f"{result.bestY:>12.6f} "
             f"{result.bestValue:>18.10f} "

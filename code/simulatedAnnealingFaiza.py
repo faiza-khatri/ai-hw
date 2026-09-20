@@ -43,9 +43,10 @@ def simAnnealing(
     (minX, minY), (maxX, maxY) = bounds
  
     if not inclusiveBounds:
-        eps = 1e-16
-        minX, minY = minX + eps, minY + eps
-        maxX, maxY = maxX - eps, maxY - eps
+        minX = math.nextafter(minX, math.inf)
+        minY = math.nextafter(minY, math.inf)
+        maxX = math.nextafter(maxX, -math.inf)
+        maxY = math.nextafter(maxY, -math.inf)
  
 
 
@@ -58,7 +59,7 @@ def simAnnealing(
         for _ in range(K):
             candX = x + random.uniform(-neighbourhoodSize, neighbourhoodSize)
             candY = y + random.uniform(-neighbourhoodSize, neighbourhoodSize)
-
+            
             candX = min(max(candX, minX), maxX)
             candY = min(max(candY, minY), maxY)
 
@@ -123,17 +124,17 @@ os.makedirs(OUT_DIR, exist_ok=True)
 
 
 problems = [
-    # name,        func,             bounds,                inclusive, best
-    ("Booth",      boothFunc,       ((-10, -10), (10, 10)), True,  "min"),
-    ("Himmelblau", himmelblauFunc,  ((-5, -5), (5, 5)),      True,  "min"),
-    ("Griewank",   griewankFunc,    ((-30, -30), (30, 30)), False, "min"),
-    ("Booth",      boothFunc,       ((-10, -10), (10, 10)), True,  "max"),
-    ("Himmelblau", himmelblauFunc,  ((-5, -5), (5, 5)),      True,  "max"),
-    ("Griewank",   griewankFunc,    ((-30, -30), (30, 30)), False, "max"),
+    # name,        func,             bounds,                inclusive, best   decTemp  K
+    ("Booth",      boothFunc,       ((-10, -10), (10, 10)), True,      "min", 0.1,    100),
+    ("Himmelblau", himmelblauFunc,  ((-5, -5), (5, 5)),     True,      "min", 0.1,    100),
+    ("Griewank",   griewankFunc,    ((-30, -30), (30, 30)), False,     "min", 0.01,   300),
+    ("Booth",      boothFunc,       ((-10, -10), (10, 10)), True,      "max", 0.1,    100),
+    ("Himmelblau", himmelblauFunc,  ((-5, -5), (5, 5)),     True,      "max", 0.1,    100),
+    ("Griewank",   griewankFunc,    ((-30, -30), (30, 30)), False,     "max", 0.01,   100),
 
 ]
 
-for name, func, bounds, inclusive, best in problems:
+for name, func, bounds, inclusive, best, decTemp, K in problems:
     (minX, minY), (maxX, maxY) = bounds
     x0 = random.uniform(minX, maxX)
     y0 = random.uniform(minY, maxY)
@@ -145,9 +146,9 @@ for name, func, bounds, inclusive, best in problems:
         func, bounds, x0, y0,
         inclusiveBounds=inclusive,
         neighbourhoodSize=0.5,
-        K=100,
+        K=K,
         temperature=1.0,
-        decTemp=0.1,
+        decTemp=decTemp,
         best=best,
     )
 
