@@ -16,6 +16,7 @@ purely through this interface.
 """
 
 import util
+import itertools
 
 
 class SearchProblem:
@@ -75,7 +76,7 @@ class SearchProblem:
         util.raiseNotDefined()
 
 
-def aStarSearch(problem):
+def aStarSearch(problem, startState=None, goalState=None):
     """
     Search the node that has the lowest combined cost (g) and heuristic (h)
     first, i.e. lowest f = g + h.
@@ -89,7 +90,16 @@ def aStarSearch(problem):
     the assignment asks you to report these for the comparative analysis.
     """
     queue = util.PriorityQueue()
-    start = problem.getStartState()
+    start = problem.getStartState() if startState is None else startState
+
+    if goalState is not None:
+        isGoal = lambda s: s == goalState
+        heuristic = lambda s: problem.getHeuristic(s, goalState)
+    else:
+        isGoal = problem.isGoalState
+        heuristic = problem.getHeuristic
+
+
     gValues = {start: 0}        # state -> cheapest gn found so far
     parent = {}                 # state -> (previous state, action taken)
     visited = set()             # states whose optimal gn is finalized
@@ -115,7 +125,7 @@ def aStarSearch(problem):
 
         gn = gValues[state]
  
-        if problem.isGoalState(state):
+        if isGoal(state):
             return _reconstructPath(parent, state), gn, nodesExpanded
 
         for successor, action, stepCost in problem.getSuccessors(state):
@@ -128,7 +138,7 @@ def aStarSearch(problem):
                 gValues[successor] = gnSuccessor
                 parent[successor] = (state, action)
 
-                hnSuccessor = problem.getHeuristic(successor)
+                hnSuccessor = heuristic(successor)
                 fnSuccessor = hnSuccessor + gnSuccessor
 
                 queue.update(successor, fnSuccessor)
@@ -213,4 +223,39 @@ def searchWithStopovers(problem, stopovers):
     requirements).
     """
     "*** YOUR STOPOVER-ROUTING CODE HERE ***"
-    util.raiseNotDefined()
+
+    hub = problem.getStartState()
+    points = [hub] + list(stopovers)
+
+    # pairwise A* between every ordered pair of points
+    pairResults = {}
+    totalNodesExpanded = 0
+
+    for a, b in itertools.permutations(points, 2):
+        # here, we assume that we have means to get heuristics btw an arbitary start and goal 
+        # instead of just problems
+        path, cost, nodes = aStarSearch(problem, startState=a, goalState=b)
+        pairResults[(a, b)] = (path, cost)  # path/cost may be None/inf
+        totalNodesExpanded += nodes
+
+    # brute-force best order of stopovers (hub -> ... -> hub)
+    # implicitly skips any order that relies on an unreachable path btw stopovers
+
+    bestOrder, bestCost = None, float('inf')
+
+    for perm in itertools.permutations(stopovers):
+        order = [hub] + list(perm) + [hub]
+        cost = sum(pairResults[(order[i], order[i + 1])][1]
+                   for i in range(len(order) - 1))
+        if cost < bestCost:
+            bestCost, bestOrder = cost, order
+
+    if bestOrder is None:
+        raise ValueError("No valid route visits all stopovers and returns to the hub")
+
+    # stitch full path from the winning order.
+    totalPath = []
+    for i in range(len(bestOrder) - 1):
+        totalPath += pairResults[(bestOrder[i], bestOrder[i + 1])][0]
+
+    return totalPath, bestCost, totalNodesExpanded, bestOrder[1:-1]
