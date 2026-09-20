@@ -89,10 +89,13 @@ class courierDeliveryProblem(SearchProblem):
         return state == self.goal   
 
     def getSuccessors(self, state):
+        """Get list of successors of a state"""
         successors = []
         for neighbor, dist in self.connections[state].items():
             if dist is None or dist <= 0:
                 continue
+
+            # if a connection does exist
             track = self.tracktypes[state][neighbor]
             cost = dist * self.penalty[track]
             action = f"{state} -> {neighbor}"

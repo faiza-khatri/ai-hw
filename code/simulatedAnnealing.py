@@ -68,26 +68,35 @@ def simulatedAnnealing(
             minimumY = math.nextafter(minimumY, math.inf)
             maximumX = math.nextafter(maximumX, -math.inf)
             maximumY = math.nextafter(maximumY, -math.inf)
+
+
     randomGenerator = random.Random(seed)
 
+    # choose a random initial starting point
     currentX = randomGenerator.uniform(minimumX, maximumX)
     currentY = randomGenerator.uniform(minimumY, maximumY)
     currentValue = function(currentX, currentY)
 
+    # set best val to only observed val yet
     bestX = currentX
     bestY = currentY
     bestValue = currentValue
 
+    # for record keeping purposes, to plot later
     iterations = [0]
     xHistory = [currentX]
     yHistory = [currentY]
     valueHistory = [currentValue]
+
+    # init vals
     acceptedMoves = 0
     iteration = 0
     temperature = startingTemperature
 
+    # while temperature is not negligible
     while temperature > 1e-12:
         for _ in range(iterationsPerTemperature):
+            # forumlate a random x and y from within the neighbourhood of the current x and y
             candidateX = currentX + randomGenerator.uniform(
                 -neighborhoodSize, neighborhoodSize
             )
@@ -95,27 +104,37 @@ def simulatedAnnealing(
                 -neighborhoodSize, neighborhoodSize
             )
 
-            # Keep every proposed neighbor within the function's domain.
+            # keep every proposed neighbor within the function's domain.
             candidateX = min(max(candidateX, minimumX), maximumX)
             candidateY = min(max(candidateY, minimumY), maximumY)
+
+            # f(neighbourX, neighbourY)
             candidateValue = function(candidateX, candidateY)
 
-            # A negative change is an improvement for the chosen objective.
-            objectiveChange = candidateValue - currentValue
-            if objective == "max":
-                objectiveChange = -objectiveChange
+            # if min, a negative difference is improvement
+            delta = candidateValue - currentValue
 
-            acceptMove = objectiveChange <= 0
+            # if max, a positive difference is improvement
+            if objective == "max":
+                delta = -delta
+
+            # if neighbour makes best val better, accept immediately
+            acceptMove = delta <= 0
+
+            # accept worse move with a probability r < P
             if not acceptMove:
-                acceptanceProbability = math.exp(-objectiveChange / temperature)
-                acceptMove = randomGenerator.random() < acceptanceProbability
+                P = math.exp(-delta / temperature)
+                r = randomGenerator.random()
+                acceptMove = r < P
 
             if acceptMove:
+                # update x and y
                 currentX = candidateX
                 currentY = candidateY
                 currentValue = candidateValue
                 acceptedMoves += 1
 
+                # keep a record of best x and y yet
                 isNewBest = (
                     currentValue < bestValue
                     if objective == "min"
@@ -203,7 +222,6 @@ def plotResult(functionName, result, outputDirectory, showPlot=False):
 
 
 def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=False):
-    """Minimize all three functions required by the assignment."""
     functions = [
         ("Booth", boothFunction, ((-10, 10), (-10, 10)), 1, {}),
         ("Himmelblau", himmelblauFunction, ((-5, 5), (-5, 5)), 1, {}),
@@ -221,6 +239,7 @@ def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=
     ]
     results = []
 
+    # minimize functions
     for index, (name, function, bounds, inclusiveBounds, tunedParameters) in enumerate(functions):
         parameters = {
             "objective": "min",
@@ -244,6 +263,7 @@ def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=
         if outputDirectory is not None:
             plotResult(name+"_min", result, outputDirectory, show)
 
+    # maximise functions
     for index, (name, function, bounds, inclusiveBounds, tunedParameters) in enumerate(functions):
             parameters = {
                 "objective": "max",

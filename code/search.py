@@ -132,20 +132,26 @@ def aStarSearch(problem, startState=None, goalState=None):
             if stepCost < 0:
                 raise ValueError("A* Search requires non-negative costs")
 
+            # get gn of successor
             gnSuccessor = gn + stepCost
 
+            # if a better gn val for sucessor found, update its gn val
             if successor not in gValues or gnSuccessor < gValues[successor]:
                 gValues[successor] = gnSuccessor
+
+                # record current state as the parent to this successor
                 parent[successor] = (state, action)
 
                 hnSuccessor = heuristic(successor)
                 fnSuccessor = hnSuccessor + gnSuccessor
 
+                # add this fn to queue so it can be compared
                 queue.update(successor, fnSuccessor)
 
     return None, float('inf'), nodesExpanded
 
 def _reconstructPath(parent, goal):
+    """Stitch the backtracking path from goal to initial state"""
     path = []
     state = goal
     while state in parent:
@@ -197,6 +203,7 @@ def dijkstraSearch(problem):
 
             newCost = pathCost + stepCost
 
+            # if new cost is better than the alr recorded best cost for this successor state
             if newCost < bestCost.get(successor, float('inf')):
                 bestCost[successor] = newCost
                 newPath = path + [action]
