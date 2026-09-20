@@ -1,5 +1,9 @@
 # Artificial Intelligence Assignment 1
 
+> **AI-assisted README:** This README was created with AI assistance purely to
+> help the checker navigate the codebase, locate the work for each question,
+> and reproduce the submitted results.
+
 This repository contains the implementation, experiments, and analysis for two
 problems:
 
