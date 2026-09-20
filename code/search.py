@@ -105,7 +105,7 @@ def aStarSearch(problem, startState=None, goalState=None):
     visited = set()             # states whose optimal gn is finalized
 
 
-    startHn = problem.getHeuristic(start)
+    startHn = heuristic(start)
     startFn = 0 + startHn
     queue.push(start, startFn)
 
