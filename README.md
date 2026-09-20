@@ -2,7 +2,9 @@
 
 > **AI-assisted README:** This README was created with AI assistance purely to
 > help the checker navigate the codebase, locate the work for each question,
-> and reproduce the submitted results.
+> and reproduce the submitted results. The README itself is not part of the
+> assignment submission; it is provided only as a guide and navigation tool
+> for the checker.
 
 This repository contains the implementation, experiments, and analysis for two
 problems:
