@@ -76,7 +76,7 @@ class SearchProblem:
         util.raiseNotDefined()
 
 
-def aStarSearch(problem, startState=None, goalState=None):
+def aStarSearch(problem, startState=None, goalState=None, onExpand=None):
     """
     Search the node that has the lowest combined cost (g) and heuristic (h)
     first, i.e. lowest f = g + h.
@@ -121,6 +121,8 @@ def aStarSearch(problem, startState=None, goalState=None):
 
         visited.add(state)
         nodesExpanded += 1
+        if onExpand is not None:
+            onExpand(state)
         print("Node Expanded: ", state)
 
         gn = gValues[state]
@@ -164,7 +166,7 @@ def _reconstructPath(parent, goal):
 
 
 
-def dijkstraSearch(problem):
+def dijkstraSearch(problem, onExpand=None):
     """
     Uniform-cost search: expand the node with the lowest cumulative path
     cost (g) first, ignoring the heuristic entirely (equivalent to A* with
@@ -193,6 +195,8 @@ def dijkstraSearch(problem):
             continue
 
         nodesExpanded += 1
+        if onExpand is not None:
+            onExpand(state)
 
         if problem.isGoalState(state):
             return path, pathCost, nodesExpanded

@@ -25,26 +25,26 @@ def boothFunction(x, y):
     if -10 <= x <= 10 and -10 <= y <= 10:
         return (x + 2 * y - 7) ** 2 + (2 * x + y - 5) ** 2
     raise ValueError(f"f(x,y) undefined for (x, y): ({x}, {y})")
-  
+
 
 def himmelblauFunction(x, y):
     # -5 <= x, y <= 5
     if -5 <= x <= 5 and -5 <= y <= 5:
         return (x ** 2 + y - 11) ** 2 + (x + y ** 2 - 7) ** 2
     raise ValueError(f"f(x,y) undefined for (x, y): ({x}, {y})")
-     
+
 
 def griewankFunction(x, y):
     # -30 < x, y < 30
     if -30 < x < 30 and -30 < y < 30:
         return 1 + (x ** 2 + y ** 2) / 4000 - math.cos(x) * math.cos(y / math.sqrt(2))
     raise ValueError(f"f(x,y) undefined for (x, y): ({x}, {y})")
-     
+
 
 def simulatedAnnealing(
     function,
     bounds,
-    inclusiveBounds=1,
+    inclusiveBounds=True,
     objective="min",
     neighborhoodSize=0.5,
     startingTemperature=1.0,
@@ -62,14 +62,15 @@ def simulatedAnnealing(
     if iterationsPerTemperature <= 0:
         raise ValueError("iterationsPerTemperature must be positive")
 
-    #for greikwalk so an invallid x,y is never generated and sent to the function as anealing occurs
     (minimumX, maximumX), (minimumY, maximumY) = bounds
-    if not inclusiveBounds:
-            minimumX = math.nextafter(minimumX, math.inf)
-            minimumY = math.nextafter(minimumY, math.inf)
-            maximumX = math.nextafter(maximumX, -math.inf)
-            maximumY = math.nextafter(maximumY, -math.inf)
 
+    # (Griewank has strict bounds) for greikwalk so an invallid x,y is never
+    # generated and sent to the function as anealing occurs
+    if not inclusiveBounds:
+        minimumX = math.nextafter(minimumX, math.inf)
+        minimumY = math.nextafter(minimumY, math.inf)
+        maximumX = math.nextafter(maximumX, -math.inf)
+        maximumY = math.nextafter(maximumY, -math.inf)
 
     randomGenerator = random.Random(seed)
 
@@ -166,7 +167,14 @@ def simulatedAnnealing(
     )
 
 
-def findBestRun(function, bounds, inclusiveBounds, restarts, firstSeed, **annealingParameters):
+def findBestRun(
+    function,
+    bounds,
+    inclusiveBounds,
+    restarts,
+    firstSeed,
+    **annealingParameters,
+):
     """Run independent trials and return the best result found."""
     if restarts <= 0:
         raise ValueError("restarts must be positive")
@@ -227,13 +235,13 @@ def plotResult(functionName, result, outputDirectory, showPlot=False):
 
 def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=False):
     functions = [
-        ("Booth", boothFunction, ((-10, 10), (-10, 10)), 1, {}),
-        ("Himmelblau", himmelblauFunction, ((-5, 5), (-5, 5)), 1, {}),
+        ("Booth", boothFunction, ((-10, 10), (-10, 10)), True, {}),
+        ("Himmelblau", himmelblauFunction, ((-5, 5), (-5, 5)), True, {}),
         (
             "Griewank",
             griewankFunction,
             ((-30, 30), (-30, 30)),
-            0, # griewank is non-inclusive of its bounds
+            False,  # griewank is non-inclusive of its bounds
             {
                 # Its many local minima need slower cooling than the baseline.
                 "temperatureDecrease": 0.01,
@@ -244,7 +252,8 @@ def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=
     results = []
 
     # minimize functions
-    for index, (name, function, bounds, inclusiveBounds, tunedParameters) in enumerate(functions):
+    for index, functionData in enumerate(functions):
+        name, function, bounds, inclusiveBounds, tunedParameters = functionData
         parameters = {
             "objective": "min",
             "neighborhoodSize": 0.5,
@@ -265,31 +274,32 @@ def runRequiredFunctions(restarts=20, firstSeed=351, outputDirectory=None, show=
         results.append((name, result, "Min"))
 
         if outputDirectory is not None:
-            plotResult(name+"_min", result, outputDirectory, show)
+            plotResult(f"{name}_min", result, outputDirectory, show)
 
     # maximise functions
-    for index, (name, function, bounds, inclusiveBounds, tunedParameters) in enumerate(functions):
-            parameters = {
-                "objective": "max",
-                "neighborhoodSize": 0.5,
-                "startingTemperature": 1.0,
-                "temperatureDecrease": 0.1,
-                "iterationsPerTemperature": 100,
-            }
-            parameters.update(tunedParameters)
-    
-            result = findBestRun(
-                function,
-                bounds,
-                inclusiveBounds,
-                restarts,
-                firstSeed + index * restarts,
-                **parameters,
-            )
-            results.append((name, result, "Max"))
-    
-            if outputDirectory is not None:
-                plotResult(name+"_max", result, outputDirectory, show)
+    for index, functionData in enumerate(functions):
+        name, function, bounds, inclusiveBounds, tunedParameters = functionData
+        parameters = {
+            "objective": "max",
+            "neighborhoodSize": 0.5,
+            "startingTemperature": 1.0,
+            "temperatureDecrease": 0.1,
+            "iterationsPerTemperature": 100,
+        }
+        parameters.update(tunedParameters)
+
+        result = findBestRun(
+            function,
+            bounds,
+            inclusiveBounds,
+            restarts,
+            firstSeed + index * restarts,
+            **parameters,
+        )
+        results.append((name, result, "Max"))
+
+        if outputDirectory is not None:
+            plotResult(f"{name}_max", result, outputDirectory, show)
 
     return results
 
@@ -301,7 +311,7 @@ def main():
     parser.add_argument(
         "--output-directory",
         type=Path,
-        default=Path(__file__).resolve().parent.parent / "plots",
+        default=Path(__file__).resolve().parent.parent / "newPlots",
     )
     parser.add_argument("--show", action="store_true")
     arguments = parser.parse_args()

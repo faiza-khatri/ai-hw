@@ -70,6 +70,37 @@ The results show that both algorithms preserve optimal solution cost, while A*
 usually reduces the search effort when the heuristic reflects the road network
 well.
 
+## Robot Navigation Simulations
+
+The following optional animations compare A* and Dijkstra side by side. The
+first phase highlights expanded states in yellow, making each algorithm's
+search behavior visible. The second phase moves the red robot along the cyan
+optimal route returned by that algorithm. The blue square is the start, the
+green star is the goal, and dark cells are obstacles. Each panel reports the
+route cost and expansion progress.
+
+### Open Grid
+
+![A* and Dijkstra navigating the open grid](robotSimulations/open_15x15_astar_vs_dijkstra.gif)
+
+### Single-Wall Detour
+
+![A* and Dijkstra navigating around one wall](robotSimulations/single_wall_detour_astar_vs_dijkstra.gif)
+
+### Alternating Barriers
+
+![A* and Dijkstra navigating alternating barriers](robotSimulations/alternating_barriers_astar_vs_dijkstra.gif)
+
+The animations can be regenerated from the `ai-hw` directory with:
+
+```powershell
+python .\code\robotSimulation.py
+```
+
+The earlier A*-only route animations remain in `robotSimulations/`. Run the
+generator with `--mode solo` for only those versions or `--mode all` to create
+both animation styles.
+
 The experiments can be reproduced by running:
 
 ```powershell
