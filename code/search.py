@@ -277,50 +277,33 @@ def searchWithStopovers(problem, stopovers):
     """
     hub = problem.getStartState()
 
-    # Visiting the hub again is redundant, and multiple packages for the same
-    # area can be delivered during one visit. Preserve the user's input order.
-    uniqueStopovers = list(
-        dict.fromkeys(stopover for stopover in stopovers if stopover != hub)
-    )
-    if not uniqueStopovers:
-        return [], 0, 0, []
-
-    points = [hub] + uniqueStopovers
+    points = [hub] + list(stopovers)
 
     # pairwise A* between every ordered pair of points
     pairResults = {}
     totalNodesExpanded = 0
 
-    for start, goal in itertools.permutations(points, 2):
-        # The temporary goal lets A* use the correct heuristic for this leg.
-        path, cost, nodes = aStarSearch(
-            problem,
-            startState=start,
-            goalState=goal,
-        )
-        pairResults[(start, goal)] = (path, cost)
+    for a, b in itertools.permutations(points, 2):
+        path, cost, nodes = aStarSearch(problem, startState=a, goalState=b)
+        pairResults[(a, b)] = (path, cost)  # path/cost may be None/inf
         totalNodesExpanded += nodes
-
+   
     # brute-force best order of stopovers (hub -> ... -> hub)
+    # implicitly skips any order that relies on an unreachable path btw stopovers
+   
     bestOrder, bestCost = None, float('inf')
-
-    for permutation in itertools.permutations(uniqueStopovers):
-        order = [hub] + list(permutation) + [hub]
-        routeLegs = [
-            pairResults[(order[index], order[index + 1])]
-            for index in range(len(order) - 1)
-        ]
-
-        # Skip an ordering if any required pair of locations is unreachable.
-        if any(path is None for path, _cost in routeLegs):
-            continue
-
-        cost = sum(cost for _path, cost in routeLegs)
+   
+    for perm in itertools.permutations(stopovers):
+        order = [hub] + list(perm) + [hub]
+        cost = sum(pairResults[(order[i], order[i + 1])][1]
+                       
+    for i in range(len(order) - 1))
         if cost < bestCost:
             bestCost, bestOrder = cost, order
-
+   
     if bestOrder is None:
-        raise ValueError("No valid route visits all stopovers and returns to the hub")
+       raise ValueError("No valid route visits all stopovers and returns to the hub")
+   
 
     # stitch full path from the winning order.
     totalPath = []
